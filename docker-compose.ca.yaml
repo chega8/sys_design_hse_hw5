@@ -1,0 +1,19 @@
+services:
+  airflow:
+    build:
+      secrets: [pip_ca]
+  data_loader:
+    build:
+      secrets: [pip_ca]
+  fraud_detector:
+    build:
+      secrets: [pip_ca]
+  transaction_simulator:
+    build:
+      secrets: [pip_ca]
+  scoring_writer:
+    build:
+      secrets: [pip_ca]
+secrets:
+  pip_ca:
+    file: ${CA_CERT_PATH:?Укажите путь к PEM bundle}

@@ -1,0 +1,554 @@
+{
+  "uid": "fraud-scoring",
+  "title": "Обработка транзакций",
+  "schemaVersion": 41,
+  "tags": [
+    "antifraud"
+  ],
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "refresh": "5s",
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Скорость скоринга",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(fraud_scored_total[10s]))",
+          "legendFormat": "Транзакций/с",
+          "format": "time_series",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Время обработки и подготовки признаков (p95)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(fraud_processing_seconds_bucket[30s])))",
+          "legendFormat": "Обработка целиком",
+          "format": "time_series",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(fraud_preprocessing_seconds_bucket[30s])))",
+          "legendFormat": "Подготовка признаков",
+          "format": "time_series",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Доля транзакций с флагом фрода",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(fraud_flagged_total[30s])) / (sum(rate(fraud_scored_total[30s])) > 0)",
+          "legendFormat": "Доля",
+          "format": "time_series",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Ошибки скоринга за минуту",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(fraud_scoring_errors_total[1m]))",
+          "legendFormat": "Ошибки",
+          "format": "time_series",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Распределение скоров во времени",
+      "type": "heatmap",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 24,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "calculate": false,
+        "cellGap": 1,
+        "color": {
+          "mode": "scheme",
+          "scheme": "Oranges",
+          "steps": 64,
+          "scale": "linear"
+        },
+        "yAxis": {
+          "axisPlacement": "left"
+        },
+        "legend": {
+          "show": true
+        },
+        "tooltip": {
+          "show": true,
+          "yHistogram": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (le) (increase(fraud_score_bucket[10s]))",
+          "legendFormat": "{{le}}",
+          "format": "heatmap",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A"
+        }
+      ],
+      "description": "Число скоров в каждом интервале за последние 10 секунд."
+    },
+    {
+      "id": 6,
+      "title": "Результаты по версиям модели",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 25,
+        "w": 24,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Доля фрода"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {},
+      "targets": [
+        {
+          "rawSql": "SELECT COALESCE(model_version, 'unknown') AS \"Версия\",\n       count(*) AS \"Скоров\",\n       avg(fraud_flag)::double precision AS \"Доля фрода\"\nFROM scores\nWHERE $__timeFilter(created_at)\nGROUP BY 1\nORDER BY max(created_at) DESC",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres"
+          },
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Плотность скоров по штату и мерчанту",
+      "type": "barchart",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 12,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "xField": "Скор",
+        "xTickLabelRotation": -45,
+        "showValue": "never"
+      },
+      "targets": [
+        {
+          "rawSql": "WITH bins AS (\n  SELECT LEAST(width_bucket(score, 0.0, 1.0, 20), 20) AS bin, count(*) AS n\n  FROM scores\n  WHERE $__timeFilter(created_at)\n  AND COALESCE(us_state, 'unknown') IN (${state:sqlstring})\n  AND COALESCE(merch, 'unknown') IN (${merch:sqlstring})\n  GROUP BY 1\n)\nSELECT to_char((i - 1) / 20.0, 'FM0.00') || '–' || to_char(i / 20.0, 'FM0.00') AS \"Скор\",\n       COALESCE(20.0 * n / NULLIF(sum(n) OVER (), 0), 0)::double precision AS \"Плотность\"\nFROM generate_series(1, 20) AS g(i)\nLEFT JOIN bins ON bin = i\nORDER BY i",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres"
+          },
+          "refId": "A"
+        }
+      ],
+      "description": "Плотность = доля скоров в интервале / ширина интервала (0,05)."
+    },
+    {
+      "id": 8,
+      "title": "TPS по штату и мерчанту",
+      "type": "timeseries",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 32,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false
+        }
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT extract(epoch FROM date_bin('5 seconds', created_at, TIMESTAMP '1970-01-01')) AS time,\n       count(*) / 5.0 AS \"Транзакций/с\"\nFROM scores\nWHERE $__timeFilter(created_at)\n  AND COALESCE(us_state, 'unknown') IN (${state:sqlstring})\n  AND COALESCE(merch, 'unknown') IN (${merch:sqlstring})\nGROUP BY 1\nORDER BY 1",
+          "format": "time_series",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres"
+          },
+          "refId": "A"
+        }
+      ],
+      "description": "По записанным скорам за интервалы по 5 секунд."
+    },
+    {
+      "id": 9,
+      "title": "Доля фрода по категориям за последние 1000 транзакций",
+      "type": "barchart",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 41,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "options": {
+        "xField": "Категория",
+        "orientation": "horizontal",
+        "showValue": "auto"
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT COALESCE(cat_id, 'unknown') AS \"Категория\",\n       avg(fraud_flag)::double precision AS \"Доля фрода\"\nFROM (\n  SELECT cat_id, fraud_flag\n  FROM scores\n  ORDER BY id DESC\n  LIMIT 1000\n) AS recent\nGROUP BY 1\nORDER BY 2 DESC",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres"
+          },
+          "refId": "A"
+        }
+      ],
+      "description": "Берутся 1000 последних записей во всей таблице scores."
+    },
+    {
+      "id": 10,
+      "title": "Сумма подозрительных операций по категориям",
+      "type": "barchart",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 41,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "options": {
+        "xField": "Категория",
+        "orientation": "horizontal",
+        "showValue": "auto"
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT COALESCE(cat_id, 'unknown') AS \"Категория\",\n       sum(amount) AS \"Подозрительный оборот\"\nFROM scores\nWHERE $__timeFilter(created_at) AND fraud_flag = 1 AND amount IS NOT NULL\nGROUP BY 1\nORDER BY 2 DESC",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres"
+          },
+          "refId": "A"
+        }
+      ],
+      "description": "Сумма транзакций с fraud_flag=1 за выбранный период."
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "state",
+        "label": "Штат",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "postgres"
+        },
+        "multi": true,
+        "includeAll": true,
+        "refresh": 2,
+        "query": "SELECT DISTINCT COALESCE(us_state, 'unknown') FROM scores ORDER BY 1",
+        "definition": "SELECT DISTINCT COALESCE(us_state, 'unknown') FROM scores ORDER BY 1",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": []
+      },
+      {
+        "name": "merch",
+        "label": "Мерчант",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "postgres"
+        },
+        "multi": true,
+        "includeAll": true,
+        "refresh": 2,
+        "query": "SELECT DISTINCT COALESCE(merch, 'unknown') FROM scores ORDER BY 1",
+        "definition": "SELECT DISTINCT COALESCE(merch, 'unknown') FROM scores ORDER BY 1",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": []
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "name": "Смена модели",
+        "enable": true,
+        "hide": false,
+        "iconColor": "rgb(255, 164, 48)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "titleFormat": "Модель {{version}}",
+        "textFormat": "Загружена версия {{version}}",
+        "tagKeys": "version",
+        "target": {
+          "refId": "Anno",
+          "expr": "fraud_model_reloaded_at_seconds and (time() - fraud_model_reloaded_at_seconds < 31)",
+          "interval": "5s"
+        },
+        "filter": {
+          "ids": [
+            1
+          ],
+          "exclude": false
+        }
+      }
+    ]
+  }
+}
